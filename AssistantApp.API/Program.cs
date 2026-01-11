@@ -1,5 +1,7 @@
 using AssistantApp.API.Data;
+using AssistantApp.API.Services;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,22 +14,34 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(connectionString));
 // --------------------------------------------
 
+// --- SERVICIOS DE NEGOCIO (Scoped) ---
+builder.Services.AddScoped<PersonService>();
+builder.Services.AddScoped<EventService>();
+builder.Services.AddScoped<AttendanceService>();
+// -------------------------------------
+
+// Habilitar Controladores y configurar JSON para evitar ciclos en relaciones N:M
+builder.Services.AddControllers().AddJsonOptions(x =>
+   x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-
 // Configure the HTTP request pipeline.
-// if (app.Environment.IsDevelopment())
-// {
-app.UseSwagger();
-app.UseSwaggerUI();
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.UseHttpsRedirection();
 
-// ... código anterior (app.MapControllers, etc)
+app.UseAuthorization();
+
+app.MapControllers();
 
 // --- ZONA DE SEEDING ---
 using (var scope = app.Services.CreateScope())
@@ -38,6 +52,8 @@ using (var scope = app.Services.CreateScope())
     // Ejecuta el seeder
     try 
     {
+        // Asegura que la BD exista
+        context.Database.EnsureCreated();
         DataSeed.SeedData(context);
     }
     catch (Exception ex)
@@ -48,5 +64,4 @@ using (var scope = app.Services.CreateScope())
 }
 // -----------------------
 
-app.Run();
 app.Run();
