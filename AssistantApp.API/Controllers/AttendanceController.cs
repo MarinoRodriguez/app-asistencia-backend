@@ -42,6 +42,15 @@ public class AttendanceController : ControllerBase
         if (!response.Success) return BadRequest(response);
         return Ok(response);
     }
+
+    // DELETE: api/Attendance/event/5/person/10
+    [HttpDelete("event/{eventId}/person/{personId}")]
+    public ActionResult<ApiResponse<bool>> Remove(int eventId, int personId)
+    {
+        var response = _service.RemoveAttendance(eventId, personId);
+        if (!response.Success) return BadRequest(response);
+        return Ok(response);
+    }
 }
 
 // DTO simple para la petición de marcar

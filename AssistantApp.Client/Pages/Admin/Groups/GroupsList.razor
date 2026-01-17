@@ -1,0 +1,70 @@
+@page "/admin/groups"
+@using AssistantApp.Shared.Models
+@using AssistantApp.Client.Services
+@inject ClientGroupService GroupService
+@inject NavigationManager Navigation
+
+<PageTitle>Gestión de Grupos</PageTitle>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Grupos</h2>
+        <a href="/admin/groups/create" class="btn btn-primary">+ Nuevo Grupo</a>
+    </div>
+
+    @if (loading)
+    {
+        <p>Cargando...</p>
+    }
+    else if (groups == null || !groups.Any())
+    {
+        <div class="alert alert-info">No hay grupos registrados.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var g in groups)
+                    {
+                        <tr>
+                            <td>@g.Name</td>
+                            <td>@g.Description</td>
+                            <td>
+                                <a href="/admin/groups/edit/@g.Id" class="btn btn-sm btn-outline-primary">Editar</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    private List<Group>? groups;
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        loading = true;
+        var response = await GroupService.GetAll();
+        if (response.Success)
+        {
+            groups = response.Data;
+        }
+        loading = false;
+    }
+}

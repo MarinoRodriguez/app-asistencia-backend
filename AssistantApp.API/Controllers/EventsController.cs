@@ -74,4 +74,12 @@ public class EventsController : ControllerBase
         if (!response.Success) return BadRequest(response);
         return Ok(response);
     }
+
+    [HttpDelete("{id}/invite/person/{personId}")]
+    public ActionResult<ApiResponse<bool>> RemoveInvitation(int id, int personId)
+    {
+        var response = _service.RemoveInvitation(id, personId);
+        if (!response.Success) return BadRequest(response);
+        return Ok(response);
+    }
 }

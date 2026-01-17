@@ -51,8 +51,8 @@ public class AttendanceService
 
         if (existing != null)
         {
-            existing.Status = status; // CORREGIDO: Type -> Status
-            existing.RegistrationDateTime = DateTime.Now; // CORREGIDO: DateTime -> RegistrationDateTime
+            existing.Status = status; 
+            existing.RegistrationDateTime = DateTime.Now; 
             _context.SaveChanges();
             return ApiResponse<Assistance>.Ok(existing, "Asistencia actualizada");
         }
@@ -62,8 +62,8 @@ public class AttendanceService
         {
             EventId = eventId,
             PersonId = personId,
-            Status = status, // CORREGIDO
-            RegistrationDateTime = DateTime.Now // CORREGIDO
+            Status = status, 
+            RegistrationDateTime = DateTime.Now 
         };
 
         _context.Assistances.Add(assistance);
@@ -88,7 +88,7 @@ public class AttendanceService
             if (!string.IsNullOrEmpty(newPerson.Email) && _context.People.Any(p => p.Email == newPerson.Email))
                 return ApiResponse<Assistance>.Fail("Ya existe una persona con ese email.");
 
-            newPerson.IsCreatedAtRuntime = true; // CORREGIDO: IsExternal -> IsCreatedAtRuntime
+            newPerson.IsCreatedAtRuntime = true; 
             _context.People.Add(newPerson);
             _context.SaveChanges();
 
@@ -97,8 +97,8 @@ public class AttendanceService
             {
                 EventId = eventId,
                 PersonId = newPerson.Id,
-                Status = status, // CORREGIDO
-                RegistrationDateTime = DateTime.Now // CORREGIDO
+                Status = status, 
+                RegistrationDateTime = DateTime.Now 
             };
 
             _context.Assistances.Add(assistance);
@@ -112,5 +112,25 @@ public class AttendanceService
             transaction.Rollback();
             return ApiResponse<Assistance>.Fail($"Error al registrar externo: {ex.Message}");
         }
+    }
+
+    // Eliminar Asistencia (Deshacer)
+    public ApiResponse<bool> RemoveAttendance(int eventId, int personId)
+    {
+        var evt = _context.Events.Find(eventId);
+        if (evt == null) return ApiResponse<bool>.Fail("Evento no encontrado");
+
+        if (evt.State != EventState.InProgress)
+            return ApiResponse<bool>.Fail("Solo se puede modificar asistencia en eventos en curso.");
+
+        var assistance = _context.Assistances
+            .FirstOrDefault(a => a.EventId == eventId && a.PersonId == personId);
+
+        if (assistance == null) return ApiResponse<bool>.Fail("No hay registro de asistencia para eliminar.");
+
+        _context.Assistances.Remove(assistance);
+        _context.SaveChanges();
+
+        return ApiResponse<bool>.Ok(true, "Asistencia eliminada");
     }
 }

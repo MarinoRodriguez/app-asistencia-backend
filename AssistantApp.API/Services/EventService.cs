@@ -126,4 +126,16 @@ public class EventService
 
         return ApiResponse<int>.Ok(toAdd.Count, $"Se agregaron {toAdd.Count} invitaciones");
     }
+
+    public ApiResponse<bool> RemoveInvitation(int eventId, int personId)
+    {
+        var inv = _context.Invitations
+            .FirstOrDefault(i => i.EventId == eventId && i.PersonId == personId);
+        
+        if (inv == null) return ApiResponse<bool>.Fail("Invitación no encontrada");
+
+        _context.Invitations.Remove(inv);
+        _context.SaveChanges();
+        return ApiResponse<bool>.Ok(true, "Invitación eliminada");
+    }
 }

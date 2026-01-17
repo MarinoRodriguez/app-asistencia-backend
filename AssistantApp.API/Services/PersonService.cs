@@ -62,6 +62,7 @@ public class PersonService
         if (!string.IsNullOrEmpty(person.Email) && _context.People.Any(p => p.Email == person.Email))
             return ApiResponse<Person>.Fail("El email ya existe");
 
+        // EF Core manejará la inserción de PersonGroups automáticamente si vienen en el objeto
         _context.People.Add(person);
         _context.SaveChanges();
         return ApiResponse<Person>.Ok(person, "Persona creada correctamente");
@@ -69,15 +70,29 @@ public class PersonService
 
     public ApiResponse<Person> Update(int id, Person person)
     {
-        var existing = _context.People.Find(id);
+        // Cargamos la entidad existente INCLUYENDO sus relaciones para poder modificarlas
+        var existing = _context.People
+            .Include(p => p.PersonGroups)
+            .FirstOrDefault(p => p.Id == id);
+            
         if (existing == null) return ApiResponse<Person>.Fail("Persona no encontrada");
 
-        // Actualizamos campos básicos
+        // 1. Actualizar campos básicos
         existing.Name = person.Name;
         existing.LastName = person.LastName;
         existing.Email = person.Email;
         existing.PhotoUrl = person.PhotoUrl;
-        existing.IsCreatedAtRuntime = person.IsCreatedAtRuntime; // CORREGIDO
+        existing.IsCreatedAtRuntime = person.IsCreatedAtRuntime;
+
+        // 2. Actualizar Relaciones (Grupos)
+        // Eliminamos las relaciones actuales
+        existing.PersonGroups.Clear();
+        
+        // Agregamos las nuevas (EF Core detectará que son nuevas relaciones)
+        foreach (var pg in person.PersonGroups)
+        {
+            existing.PersonGroups.Add(new PersonGroup { PersonId = id, GroupId = pg.GroupId });
+        }
         
         _context.SaveChanges();
         return ApiResponse<Person>.Ok(existing, "Persona actualizada");

@@ -18,7 +18,21 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<PersonService>();
 builder.Services.AddScoped<EventService>();
 builder.Services.AddScoped<AttendanceService>();
+builder.Services.AddScoped<GroupService>();
 // -------------------------------------
+
+// --- CORS ---
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        });
+});
+// ------------
 
 // Habilitar Controladores y configurar JSON para evitar ciclos en relaciones N:M
 builder.Services.AddControllers().AddJsonOptions(x =>
@@ -38,6 +52,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// IMPORTANTE: UseCors debe ir antes de UseAuthorization
+app.UseCors("AllowAll");
 
 app.UseAuthorization();
 
