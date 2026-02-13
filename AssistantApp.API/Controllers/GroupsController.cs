@@ -16,9 +16,9 @@ public class GroupsController : ControllerBase
     }
 
     [HttpGet]
-    public ActionResult<ApiResponse<List<Group>>> GetAll()
+    public ActionResult<ApiResponse<List<Group>>> GetAll([FromQuery] bool includeInactive = true)
     {
-        return Ok(_service.GetAll());
+        return Ok(_service.GetAll(includeInactive));
     }
 
     [HttpGet("{id}")]

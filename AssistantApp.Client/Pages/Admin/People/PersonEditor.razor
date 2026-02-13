@@ -93,8 +93,8 @@
     {
         loading = true;
         
-        // 1. Cargar Grupos Disponibles
-        var groupsResp = await GroupService.GetAll();
+        // 1. Cargar Grupos Disponibles (SOLO ACTIVOS)
+        var groupsResp = await GroupService.GetAll(includeInactive: false);
         if (groupsResp.Success)
         {
             availableGroups = groupsResp.Data;

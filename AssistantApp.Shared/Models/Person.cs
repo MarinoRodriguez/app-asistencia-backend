@@ -8,7 +8,9 @@ public class Person
     public string? Email { get; set; }
     public string? IdNumber { get; set; }
     public string? PhotoUrl { get; set; }
-    public bool IsCreatedAtRuntime { get; set; } = false; // Flag para saber si fue creado durante una toma de asistencia
+    
+    public bool IsActive { get; set; } = true; // Nuevo campo para Soft Delete
+    public bool IsCreatedAtRuntime { get; set; } = false; 
 
     // Relación Muchos a Muchos con Grupos
     public List<PersonGroup> PersonGroups { get; set; } = new();

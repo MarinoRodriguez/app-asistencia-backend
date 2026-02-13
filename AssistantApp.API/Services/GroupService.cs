@@ -13,12 +13,19 @@ public class GroupService
         _context = context;
     }
 
-    public ApiResponse<List<Group>> GetAll()
+    public ApiResponse<List<Group>> GetAll(bool includeInactive = true)
     {
-        var list = _context.Groups
+        var query = _context.Groups
             .Include(g => g.PersonGroups)
             .ThenInclude(pg => pg.Person)
-            .ToList();
+            .AsQueryable();
+
+        if (!includeInactive)
+        {
+            query = query.Where(g => g.Active);
+        }
+
+        var list = query.ToList();
         return ApiResponse<List<Group>>.Ok(list);
     }
 
@@ -38,6 +45,7 @@ public class GroupService
         if (_context.Groups.Any(g => g.Name == group.Name))
             return ApiResponse<Group>.Fail("Ya existe un grupo con ese nombre");
 
+        group.Active = true; // Por defecto activo
         _context.Groups.Add(group);
         _context.SaveChanges();
         return ApiResponse<Group>.Ok(group, "Grupo creado");
@@ -50,6 +58,7 @@ public class GroupService
 
         existing.Name = group.Name;
         existing.Description = group.Description;
+        existing.Active = group.Active; // Permitir activar/desactivar
 
         _context.SaveChanges();
         return ApiResponse<Group>.Ok(existing, "Grupo actualizado");
@@ -57,11 +66,12 @@ public class GroupService
 
     public ApiResponse<bool> Delete(int id)
     {
+        // Soft Delete
         var group = _context.Groups.Find(id);
         if (group == null) return ApiResponse<bool>.Fail("Grupo no encontrado");
 
-        _context.Groups.Remove(group);
+        group.Active = false;
         _context.SaveChanges();
-        return ApiResponse<bool>.Ok(true, "Grupo eliminado");
+        return ApiResponse<bool>.Ok(true, "Grupo desactivado");
     }
 }

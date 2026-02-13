@@ -12,9 +12,9 @@ public class ClientGroupService
         _http = http;
     }
 
-    public async Task<ApiResponse<List<Group>>> GetAll()
+    public async Task<ApiResponse<List<Group>>> GetAll(bool includeInactive = true)
     {
-        var result = await _http.GetFromJsonAsync<ApiResponse<List<Group>>>("api/groups");
+        var result = await _http.GetFromJsonAsync<ApiResponse<List<Group>>>($"api/groups?includeInactive={includeInactive}");
         return result ?? ApiResponse<List<Group>>.Fail("Error de conexión");
     }
 
