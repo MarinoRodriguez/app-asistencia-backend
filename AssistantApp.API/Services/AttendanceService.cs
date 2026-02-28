@@ -24,6 +24,68 @@ public class AttendanceService
         return ApiResponse<List<Assistance>>.Ok(list);
     }
 
+    public ApiResponse<List<AttendanceRosterItem>> GetRoster(int eventId)
+    {
+        var evt = _context.Events.Find(eventId);
+        if (evt == null) return ApiResponse<List<AttendanceRosterItem>>.Fail("Evento no encontrado");
+
+        var invitedIds = _context.Invitations
+            .Where(i => i.EventId == eventId)
+            .Select(i => i.PersonId)
+            .ToHashSet();
+
+        var assistanceMap = _context.Assistances
+            .Where(a => a.EventId == eventId)
+            .ToDictionary(a => a.PersonId, a => a.Status);
+
+        var peopleQuery = _context.People
+            .Include(p => p.PersonGroups)
+            .ThenInclude(pg => pg.Group)
+            .AsQueryable();
+        if (!evt.AllowUninvited)
+        {
+            peopleQuery = peopleQuery.Where(p => invitedIds.Contains(p.Id));
+        }
+
+        var people = peopleQuery.ToList();
+
+        var roster = people.Select(person =>
+        {
+            var invited = invitedIds.Contains(person.Id);
+            var hasRecord = assistanceMap.TryGetValue(person.Id, out var s);
+            var status = hasRecord ? s : AssistanceType.Absent;
+            return new AttendanceRosterItem
+            {
+                PersonId = person.Id,
+                Invited = invited,
+                Status = status,
+                HasRecord = hasRecord,
+                Person = new PersonSummary
+                {
+                    Id = person.Id,
+                    Name = person.Name,
+                    LastName = person.LastName,
+                    Email = person.Email,
+                    PhotoUrl = person.PhotoUrl,
+                    Groups = person.PersonGroups
+                        .Where(pg => pg.Group != null)
+                        .Select(pg => new GroupSummary
+                        {
+                            Id = pg.Group!.Id,
+                            Name = pg.Group!.Name
+                        })
+                        .ToList()
+                }
+            };
+        })
+        .OrderByDescending(item => item.Invited)
+        .ThenBy(item => item.Person.Name)
+        .ThenBy(item => item.Person.LastName)
+        .ToList();
+
+        return ApiResponse<List<AttendanceRosterItem>>.Ok(roster);
+    }
+
     // Registrar Asistencia (Core)
     public ApiResponse<Assistance> MarkAttendance(int eventId, int personId, AssistanceType status)
     {
@@ -133,4 +195,29 @@ public class AttendanceService
 
         return ApiResponse<bool>.Ok(true, "Asistencia eliminada");
     }
+}
+
+public class AttendanceRosterItem
+{
+    public int PersonId { get; set; }
+    public bool Invited { get; set; }
+    public AssistanceType Status { get; set; }
+    public bool HasRecord { get; set; }
+    public PersonSummary Person { get; set; } = new();
+}
+
+public class PersonSummary
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string? Email { get; set; }
+    public string? PhotoUrl { get; set; }
+    public List<GroupSummary> Groups { get; set; } = new();
+}
+
+public class GroupSummary
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
 }

@@ -97,4 +97,16 @@ public class PersonService
         _context.SaveChanges();
         return ApiResponse<Person>.Ok(existing, "Persona actualizada");
     }
+
+    public ApiResponse Delete(int id)
+    {
+        var existent = GetById(id);
+        if (!existent.Success || existent.Data == null)
+            return ApiResponse.Fail(existent.Message);
+
+        _context.People.Remove(existent.Data);
+
+        _context.SaveChanges();
+        return ApiResponse.Ok();
+    }
 }

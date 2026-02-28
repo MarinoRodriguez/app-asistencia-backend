@@ -2,7 +2,7 @@ import { NavLink } from "react-router-dom";
 
 const navItems = [
   { to: "/staff/attendance", label: "Asistencia", icon: "how_to_reg" },
-  { to: "/admin/events", label: "Eventos", icon: "calendar_today" },
+  // { to: "/admin/events", label: "Eventos", icon: "calendar_today" },
   { to: "/admin/dashboard", label: "Dashboard", icon: "dashboard" },
 ];
 

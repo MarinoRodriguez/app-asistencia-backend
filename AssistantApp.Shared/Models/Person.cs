@@ -9,7 +9,7 @@ public class Person
     public string? IdNumber { get; set; }
     public string? PhotoUrl { get; set; }
     
-    public bool IsActive { get; set; } = true; // Nuevo campo para Soft Delete
+    // public bool IsActive { get; set; } = true; // Nuevo campo para Soft Delete
     public bool IsCreatedAtRuntime { get; set; } = false; 
 
     // Relación Muchos a Muchos con Grupos

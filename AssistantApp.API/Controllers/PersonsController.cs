@@ -50,4 +50,11 @@ public class PersonsController : ControllerBase
         if (!response.Success) return NotFound(response);
         return Ok(response);
     }
+    [HttpDelete("{id}")]
+    public ActionResult<ApiResponse<Person>> Delete(int id)
+    {
+        var response = _service.Delete(id);
+        if (!response.Success) return NotFound(response);
+        return Ok(response);
+    }
 }

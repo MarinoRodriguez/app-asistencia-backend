@@ -22,6 +22,15 @@ public class AttendanceController : ControllerBase
         return Ok(_service.GetByEvent(eventId));
     }
 
+    // GET: api/Attendance/event/5/roster
+    [HttpGet("event/{eventId}/roster")]
+    public ActionResult<ApiResponse<List<AttendanceRosterItem>>> GetRoster(int eventId)
+    {
+        var response = _service.GetRoster(eventId);
+        if (!response.Success) return NotFound(response);
+        return Ok(response);
+    }
+
     // POST: api/Attendance/mark
     // Body: { eventId: 1, personId: 5, type: 1 }
     [HttpPost("mark")]

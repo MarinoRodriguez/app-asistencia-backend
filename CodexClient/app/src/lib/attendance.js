@@ -12,7 +12,7 @@ export async function resolveActiveEvent() {
 
 export async function loadAttendanceForEvent(eventId) {
   if (!eventId) return [];
-  const res = await attendanceApi.getByEvent(eventId);
+  const res = await attendanceApi.getRoster(eventId);
   return res.data || [];
 }
 

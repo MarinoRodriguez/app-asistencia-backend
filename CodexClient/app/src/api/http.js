@@ -1,4 +1,6 @@
-const baseUrl = (import.meta.env.VITE_API_URL || "https://localhost:7224").replace(/\/$/, "");
+const runtimeUrl =
+  (typeof window !== "undefined" && window.__ENV__ && window.__ENV__.VITE_API_URL) || "";
+const baseUrl = (runtimeUrl || import.meta.env.VITE_API_URL || "https://localhost:7224").replace(/\/$/, "");
 
 async function parseResponse(response) {
   const contentType = response.headers.get("content-type") || "";

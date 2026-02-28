@@ -51,7 +51,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+if (!string.Equals(Environment.GetEnvironmentVariable("DISABLE_HTTPS_REDIRECT"), "true", StringComparison.OrdinalIgnoreCase))
+{
+    app.UseHttpsRedirection();
+}
 
 // IMPORTANTE: UseCors debe ir antes de UseAuthorization
 app.UseCors("AllowAll");
@@ -60,25 +63,25 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// --- ZONA DE SEEDING ---
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    var context = services.GetRequiredService<AppDbContext>();
-    
-    // Ejecuta el seeder
-    try 
-    {
-        // Asegura que la BD exista
-        context.Database.EnsureCreated();
-        DataSeed.SeedData(context);
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Ocurrió un error al insertar datos de prueba.");
-    }
-}
-// -----------------------
+//// --- ZONA DE SEEDING ---
+// using (var scope = app.Services.CreateScope())
+// {
+//     var services = scope.ServiceProvider;
+//     var context = services.GetRequiredService<AppDbContext>();
+//     
+//     // Ejecuta el seeder
+//     try 
+//     {
+//         // Asegura que la BD exista
+//         context.Database.EnsureCreated();
+//         DataSeed.SeedData(context);
+//     }
+//     catch (Exception ex)
+//     {
+//         var logger = services.GetRequiredService<ILogger<Program>>();
+//         logger.LogError(ex, "Ocurrió un error al insertar datos de prueba.");
+//     }
+// }
+// // -----------------------
 
 app.Run();

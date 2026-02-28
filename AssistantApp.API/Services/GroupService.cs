@@ -69,8 +69,7 @@ public class GroupService
         // Soft Delete
         var group = _context.Groups.Find(id);
         if (group == null) return ApiResponse<bool>.Fail("Grupo no encontrado");
-
-        group.Active = false;
+        _context.Groups.Remove(group);
         _context.SaveChanges();
         return ApiResponse<bool>.Ok(true, "Grupo desactivado");
     }

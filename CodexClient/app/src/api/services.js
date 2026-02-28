@@ -34,6 +34,7 @@ export const eventApi = {
 
 export const attendanceApi = {
   getByEvent: (eventId) => apiRequest(`api/attendance/event/${eventId}`),
+  getRoster: (eventId) => apiRequest(`api/attendance/event/${eventId}/roster`),
   mark: (eventId, personId, type) =>
     apiRequest("api/attendance/mark", {
       method: "POST",
