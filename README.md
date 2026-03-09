@@ -57,7 +57,3 @@ Dockerfile en `AssistantApp.API/Dockerfile`. Multi‑arch con `make release`.
 ```bash
 make -C AssistantApp.API release DOCKERHUB_USER=tu_usuario VERSION=1.0.0
 ```
-
-## Notas
-- Para finalizar eventos: `POST /api/events/{id}/finish`
-- Eventos finalizados son solo lectura.
