@@ -24,7 +24,7 @@
 
 # Ignore client/aux folders
 ClientReact/
-CodexClient/
+CodexClient/*
 GeminiClient/
 JulesCLient/
 mysql_test/
