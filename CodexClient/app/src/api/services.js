@@ -27,6 +27,7 @@ export const eventApi = {
   update: (id, event) => apiRequest(`api/events/${id}`, { method: "PUT", body: JSON.stringify(event) }),
   start: (id) => apiRequest(`api/events/${id}/start`, { method: "POST" }),
   finish: (id) => apiRequest(`api/events/${id}/finish`, { method: "POST" }),
+  remove: (id) => apiRequest(`api/events/${id}`, { method: "DELETE" }),
   invitePerson: (eventId, personId) => apiRequest(`api/events/${eventId}/invite/person/${personId}`, { method: "POST" }),
   inviteGroup: (eventId, groupId) => apiRequest(`api/events/${eventId}/invite/group/${groupId}`, { method: "POST" }),
   removeInvitation: (eventId, personId) => apiRequest(`api/events/${eventId}/invite/person/${personId}`, { method: "DELETE" }),
@@ -47,4 +48,35 @@ export const attendanceApi = {
     }),
   remove: (eventId, personId) =>
     apiRequest(`api/attendance/event/${eventId}/person/${personId}`, { method: "DELETE" }),
+};
+
+export const authApi = {
+  login: (payload) => apiRequest("api/auth/login", { method: "POST", body: JSON.stringify(payload) }),
+  register: (payload) => apiRequest("api/auth/register", { method: "POST", body: JSON.stringify(payload) }),
+};
+
+export const usersApi = {
+  getAll: (search) => {
+    const query = search ? `?search=${encodeURIComponent(search)}` : "";
+    return apiRequest(`api/users${query}`);
+  },
+  create: (payload) => apiRequest("api/users", { method: "POST", body: JSON.stringify(payload) }),
+  update: (id, payload) => apiRequest(`api/users/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  updateRoles: (id, payload) => apiRequest(`api/users/${id}/roles`, { method: "PUT", body: JSON.stringify(payload) }),
+  setLock: (id, payload) => apiRequest(`api/users/${id}/lock`, { method: "PUT", body: JSON.stringify(payload) }),
+  resetPassword: (id, payload) =>
+    apiRequest(`api/users/${id}/reset-password`, { method: "POST", body: JSON.stringify(payload) }),
+  changeMyPassword: (payload) =>
+    apiRequest("api/users/me/change-password", { method: "POST", body: JSON.stringify(payload) }),
+};
+
+export const rolesApi = {
+  getAll: () => apiRequest("api/roles"),
+  getPermissions: () => apiRequest("api/roles/permissions"),
+  create: (payload) => apiRequest("api/roles", { method: "POST", body: JSON.stringify(payload) }),
+  updatePermissions: (id, payload) =>
+    apiRequest(`api/roles/${id}/permissions`, { method: "PUT", body: JSON.stringify(payload) }),
+  updatePermissionsBatch: (id, payload) =>
+    apiRequest(`api/roles/${id}/permissions/batch`, { method: "POST", body: JSON.stringify(payload) }),
+  remove: (id) => apiRequest(`api/roles/${id}`, { method: "DELETE" }),
 };

@@ -3,6 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../components/layout/AdminLayout";
 import { eventApi, groupApi } from "../api/services";
 import { formatDateTime } from "../lib/format";
+import TimePickerPopover from "../components/ui/TimePickerPopover";
+import { EVENT_STATE } from "../lib/constants";
 
 function splitDateTime(dateString) {
   if (!dateString) return { date: "", time: "" };
@@ -24,6 +26,8 @@ export default function EventConfig() {
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
+  const [eventState, setEventState] = useState(null);
+  const [timePickerOpen, setTimePickerOpen] = useState(false);
   const [allowUninvited, setAllowUninvited] = useState(true);
   const [allowExternal, setAllowExternal] = useState(false);
   const [autoStart, setAutoStart] = useState(true);
@@ -53,6 +57,7 @@ export default function EventConfig() {
           const split = splitDateTime(evt.scheduledStartDate);
           setDate(split.date);
           setTime(split.time);
+          setEventState(evt.state);
           setAllowUninvited(Boolean(evt.allowUninvited));
           setAllowExternal(Boolean(evt.allowExternal));
           setAutoStart(Boolean(evt.autoStart));
@@ -71,10 +76,24 @@ export default function EventConfig() {
     };
   }, [id, isNew]);
 
+
   const selectedGroupObjects = useMemo(
     () => groups.filter((group) => selectedGroups.includes(group.id)),
     [groups, selectedGroups]
   );
+
+  const timeParts = useMemo(() => {
+    if (!time) return { hour: "12", minute: "00", period: "AM" };
+    const [rawHour, rawMinute] = time.split(":");
+    const hour24 = Number(rawHour || 0);
+    const period = hour24 >= 12 ? "PM" : "AM";
+    const hour12 = hour24 % 12 || 12;
+    return {
+      hour: String(hour12).padStart(2, "0"),
+      minute: String(rawMinute || "00").padStart(2, "0"),
+      period,
+    };
+  }, [time]);
 
   const handleToggleGroup = (groupId) => {
     setSelectedGroups((prev) =>
@@ -83,6 +102,7 @@ export default function EventConfig() {
   };
 
   const handleSave = async () => {
+    if (!isNew && eventState === EVENT_STATE.Finished) return;
     setSaving(true);
     setError("");
     setInfo("");
@@ -137,13 +157,15 @@ export default function EventConfig() {
             >
               Cancelar
             </button>
-            <button
-              className="px-4 py-2 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-blue-700 shadow-sm shadow-primary/20 transition-all"
-              onClick={handleSave}
-              disabled={saving}
-            >
-              {saving ? "Guardando..." : "Guardar Evento"}
-            </button>
+            {eventState !== EVENT_STATE.Finished ? (
+              <button
+                className="px-4 py-2 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-blue-700 shadow-sm shadow-primary/20 transition-all"
+                onClick={handleSave}
+                disabled={saving}
+              >
+                {saving ? "Guardando..." : "Guardar Evento"}
+              </button>
+            ) : null}
           </div>
         </div>
       </header>
@@ -153,6 +175,11 @@ export default function EventConfig() {
           {loading && <p className="text-slate-500">Cargando configuración...</p>}
           {error && <p className="text-rose-600">{error}</p>}
           {info && <p className="text-emerald-600">{info}</p>}
+          {!isNew && eventState === EVENT_STATE.Finished ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+              Este evento está finalizado. Puedes visualizar la información, pero no modificarla.
+            </div>
+          ) : null}
 
           {!loading && (
             <>
@@ -169,6 +196,7 @@ export default function EventConfig() {
                       placeholder="Ej. Retiro Espiritual 2024"
                       value={title}
                       onChange={(event) => setTitle(event.target.value)}
+                      disabled={!isNew && eventState === EVENT_STATE.Finished}
                     />
                   </div>
                   <div className="md:col-span-2 space-y-2">
@@ -179,6 +207,7 @@ export default function EventConfig() {
                       value={description}
                       onChange={(event) => setDescription(event.target.value)}
                       placeholder="Detalle breve del evento"
+                      disabled={!isNew && eventState === EVENT_STATE.Finished}
                     />
                   </div>
                   <div className="space-y-2">
@@ -192,6 +221,7 @@ export default function EventConfig() {
                         type="date"
                         value={date}
                         onChange={(event) => setDate(event.target.value)}
+                        disabled={!isNew && eventState === EVENT_STATE.Finished}
                       />
                     </div>
                   </div>
@@ -202,10 +232,29 @@ export default function EventConfig() {
                         schedule
                       </span>
                       <input
-                        className="w-full pl-11 pr-4 py-3 rounded-lg border border-slate-300 bg-white text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                        type="time"
+                        className="w-full pl-11 pr-12 py-3 rounded-lg border border-slate-300 bg-white text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all cursor-pointer"
+                        type="text"
+                        readOnly
+                        value={`${timeParts.hour}:${timeParts.minute} ${timeParts.period}`}
+                        onClick={() =>
+                          !isNew && eventState === EVENT_STATE.Finished ? null : setTimePickerOpen((prev) => !prev)
+                        }
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        onClick={() =>
+                          !isNew && eventState === EVENT_STATE.Finished ? null : setTimePickerOpen((prev) => !prev)
+                        }
+                      >
+                        <span className="material-symbols-outlined text-xl">schedule</span>
+                      </button>
+
+                      <TimePickerPopover
+                        open={timePickerOpen}
                         value={time}
-                        onChange={(event) => setTime(event.target.value)}
+                        onChange={setTime}
+                        onClose={() => setTimePickerOpen(false)}
                       />
                     </div>
                   </div>
@@ -222,6 +271,7 @@ export default function EventConfig() {
                             type="button"
                             className="material-symbols-outlined text-sm"
                             onClick={() => handleToggleGroup(group.id)}
+                            disabled={!isNew && eventState === EVENT_STATE.Finished}
                           >
                             close
                           </button>
@@ -242,6 +292,7 @@ export default function EventConfig() {
                             type="checkbox"
                             checked={selectedGroups.includes(group.id)}
                             onChange={() => handleToggleGroup(group.id)}
+                            disabled={!isNew && eventState === EVENT_STATE.Finished}
                           />
                           {group.name}
                         </label>
@@ -273,6 +324,7 @@ export default function EventConfig() {
                         type="checkbox"
                         checked={allowUninvited}
                         onChange={(event) => setAllowUninvited(event.target.checked)}
+                        disabled={!isNew && eventState === EVENT_STATE.Finished}
                       />
                       <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full peer-checked:after:border-white" />
                     </label>
@@ -290,6 +342,7 @@ export default function EventConfig() {
                         type="checkbox"
                         checked={allowExternal}
                         onChange={(event) => setAllowExternal(event.target.checked)}
+                        disabled={!isNew && eventState === EVENT_STATE.Finished}
                       />
                       <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full peer-checked:after:border-white" />
                     </label>
@@ -307,6 +360,7 @@ export default function EventConfig() {
                         type="checkbox"
                         checked={autoStart}
                         onChange={(event) => setAutoStart(event.target.checked)}
+                        disabled={!isNew && eventState === EVENT_STATE.Finished}
                       />
                       <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full peer-checked:after:border-white" />
                     </label>
@@ -319,15 +373,17 @@ export default function EventConfig() {
                   className="px-8 py-3 text-sm font-semibold text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
                   onClick={() => navigate("/admin/events")}
                 >
-                  Descartar Cambios
+                  Volver
                 </button>
-                <button
-                  className="px-10 py-3 text-sm font-bold text-white bg-primary rounded-lg hover:bg-blue-700 shadow-xl shadow-primary/30 transition-all"
-                  onClick={handleSave}
-                  disabled={saving}
-                >
-                  {saving ? "Guardando..." : "Guardar Evento"}
-                </button>
+                {eventState !== EVENT_STATE.Finished ? (
+                  <button
+                    className="px-10 py-3 text-sm font-bold text-white bg-primary rounded-lg hover:bg-blue-700 shadow-xl shadow-primary/30 transition-all"
+                    onClick={handleSave}
+                    disabled={saving}
+                  >
+                    {saving ? "Guardando..." : "Guardar Evento"}
+                  </button>
+                ) : null}
               </div>
 
               {!isNew && (

@@ -1,34 +1,30 @@
-# Common IntelliJ Platform excludes
+# Root ignores
 
-# User specific
-**/.idea/**/workspace.xml
-**/.idea/**/tasks.xml
-**/.idea/shelf/*
-**/.idea/dictionaries
-**/.idea/httpRequests/
+# Build / bin
+**/bin/
+**/obj/
 
-# Sensitive or high-churn files
-**/.idea/**/dataSources/
-**/.idea/**/dataSources.ids
-**/.idea/**/dataSources.xml
-**/.idea/**/dataSources.local.xml
-**/.idea/**/sqlDataSources.xml
-**/.idea/**/dynamic.xml
+# User/IDE
+**/.vscode/
+**/.idea/
+**/*.user
+**/*.suo
 
-# Rider
-# Rider auto-generates .iml files, and contentModel.xml
-**/.idea/**/*.iml
-**/.idea/**/contentModel.xml
-**/.idea/**/modules.xml
+# OS
+**/.DS_Store
 
-*.suo
-*.user
-.vs/
-[Bb]in/
-[Oo]bj/
-_UpgradeReport_Files/
-[Pp]ackages/
+# Local DB / data
+**/*.db
+**/*.sqlite
+**/Data/
+**/DefaultData/
 
-Thumbs.db
-Desktop.ini
-.DS_Store
+# Logs
+**/*.log
+
+# Ignore client/aux folders
+ClientReact/
+CodexClient/
+GeminiClient/
+JulesCLient/
+mysql_test/

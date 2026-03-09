@@ -478,6 +478,10 @@ a {
   color: #135f35;
 }
 
+.warning-text {
+  color: #8a5a00;
+}
+
 .empty-state {
   display: grid;
   gap: 10px;

@@ -35,6 +35,7 @@ export default function EventEditorPage() {
   const [error, setError] = useState("");
 
   const invitedIds = useMemo(() => new Set((eventData.invitations || []).map((inv) => inv.personId)), [eventData.invitations]);
+  const isFinished = eventData.state === EVENT_STATE.Finished;
 
   async function loadGroups() {
     try {
@@ -87,6 +88,7 @@ export default function EventEditorPage() {
 
   async function saveEvent(event) {
     event.preventDefault();
+    if (isFinished) return;
     setSaving(true);
     setMessage("");
     setError("");
@@ -202,6 +204,11 @@ export default function EventEditorPage() {
                   </Link>
                 </>
               )}
+              {eventData.state === EVENT_STATE.Finished ? (
+                <Link className="btn secondary" to={`/attendance/${id}`}>
+                  Ver asistencia
+                </Link>
+              ) : null}
             </div>
           ) : null
         }
@@ -218,6 +225,9 @@ export default function EventEditorPage() {
         ) : null}
       </div>
 
+      {isFinished ? (
+        <p className="panel warning-text">Este evento está finalizado. Solo puedes visualizar la información.</p>
+      ) : null}
       {error ? <p className="error-text panel">{error}</p> : null}
       {message ? <p className="ok-text panel">{message}</p> : null}
 
@@ -234,6 +244,7 @@ export default function EventEditorPage() {
                   value={eventData.title || ""}
                   onChange={(event) => setEventData((prev) => ({ ...prev, title: event.target.value }))}
                   required
+                  disabled={isFinished}
                 />
               </label>
 
@@ -249,6 +260,7 @@ export default function EventEditorPage() {
                       scheduledStartDate: fromDateTimeLocalInput(event.target.value),
                     }))
                   }
+                  disabled={isFinished}
                 />
               </label>
 
@@ -259,6 +271,7 @@ export default function EventEditorPage() {
                   rows={4}
                   value={eventData.description || ""}
                   onChange={(event) => setEventData((prev) => ({ ...prev, description: event.target.value }))}
+                  disabled={isFinished}
                 />
               </label>
 
@@ -268,6 +281,7 @@ export default function EventEditorPage() {
                     type="checkbox"
                     checked={Boolean(eventData.allowUninvited)}
                     onChange={(event) => setEventData((prev) => ({ ...prev, allowUninvited: event.target.checked }))}
+                    disabled={isFinished}
                   />
                   <span>Permitir no invitados</span>
                 </label>
@@ -277,6 +291,7 @@ export default function EventEditorPage() {
                     type="checkbox"
                     checked={Boolean(eventData.allowExternal)}
                     onChange={(event) => setEventData((prev) => ({ ...prev, allowExternal: event.target.checked }))}
+                    disabled={isFinished}
                   />
                   <span>Permitir externos</span>
                 </label>
@@ -286,6 +301,7 @@ export default function EventEditorPage() {
                     type="checkbox"
                     checked={Boolean(eventData.autoStart)}
                     onChange={(event) => setEventData((prev) => ({ ...prev, autoStart: event.target.checked }))}
+                    disabled={isFinished}
                   />
                   <span>Auto inicio programado</span>
                 </label>
@@ -295,9 +311,11 @@ export default function EventEditorPage() {
                 <Link className="btn ghost" to="/admin/events">
                   Cancelar
                 </Link>
-                <button className="btn" type="submit" disabled={saving}>
-                  {saving ? "Guardando..." : "Guardar"}
-                </button>
+                {!isFinished ? (
+                  <button className="btn" type="submit" disabled={saving}>
+                    {saving ? "Guardando..." : "Guardar"}
+                  </button>
+                ) : null}
               </div>
             </>
           ) : null}

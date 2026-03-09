@@ -1,6 +1,12 @@
 using AssistantApp.API.Data;
+using AssistantApp.API.Identity;
 using AssistantApp.API.Services;
+using AssistantApp.Shared;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +19,52 @@ var connectionString = builder.Configuration.GetConnectionString("Default") ?? "
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(connectionString));
 // --------------------------------------------
+
+// --- IDENTITY + AUTH ---
+builder.Services
+    .AddIdentityCore<ApplicationUser>(options =>
+    {
+        options.User.RequireUniqueEmail = true;
+        options.Password.RequiredLength = 8;
+        options.Password.RequireDigit = false;
+        options.Password.RequireUppercase = false;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireNonAlphanumeric = false;
+    })
+    .AddRoles<IdentityRole>()
+    .AddSignInManager()
+    .AddEntityFrameworkStores<AppDbContext>()
+    .AddDefaultTokenProviders();
+
+var jwtKey = builder.Configuration["Jwt:Key"] ?? "dev-change-this-key";
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "AssistantApp";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "AssistantApp";
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateIssuerSigningKey = true,
+            ValidateLifetime = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+        };
+    });
+
+builder.Services.AddAuthorization(options =>
+{
+    foreach (var permission in Permissions.All)
+    {
+        options.AddPolicy(permission, policy =>
+            policy.RequireClaim("permission", permission));
+    }
+});
+// ------------------------
 
 // --- SERVICIOS DE NEGOCIO (Scoped) ---
 builder.Services.AddScoped<PersonService>();
@@ -59,29 +111,31 @@ if (!string.Equals(Environment.GetEnvironmentVariable("DISABLE_HTTPS_REDIRECT"),
 // IMPORTANTE: UseCors debe ir antes de UseAuthorization
 app.UseCors("AllowAll");
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 
+
 //// --- ZONA DE SEEDING ---
-// using (var scope = app.Services.CreateScope())
-// {
-//     var services = scope.ServiceProvider;
-//     var context = services.GetRequiredService<AppDbContext>();
-//     
-//     // Ejecuta el seeder
-//     try 
-//     {
-//         // Asegura que la BD exista
-//         context.Database.EnsureCreated();
-//         DataSeed.SeedData(context);
-//     }
-//     catch (Exception ex)
-//     {
-//         var logger = services.GetRequiredService<ILogger<Program>>();
-//         logger.LogError(ex, "Ocurrió un error al insertar datos de prueba.");
-//     }
-// }
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<AppDbContext>();
+    
+    // Ejecuta el seeder
+    try 
+    {
+        // Asegura que la BD exista
+        context.Database.EnsureCreated();
+        // DataSeed.SeedData(context);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Ocurrió un error al insertar datos de prueba.");
+    }
+}
 // // -----------------------
 
 app.Run();

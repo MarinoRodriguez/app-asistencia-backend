@@ -1,5 +1,7 @@
 using AssistantApp.API.Services;
+using AssistantApp.Shared;
 using AssistantApp.Shared.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AssistantApp.API.Controllers;
@@ -17,6 +19,7 @@ public class AttendanceController : ControllerBase
 
     // GET: api/Attendance/event/5
     [HttpGet("event/{eventId}")]
+    [Authorize(Policy = Permissions.AttendanceView)]
     public ActionResult<ApiResponse<List<Assistance>>> GetByEvent(int eventId)
     {
         return Ok(_service.GetByEvent(eventId));
@@ -24,6 +27,7 @@ public class AttendanceController : ControllerBase
 
     // GET: api/Attendance/event/5/roster
     [HttpGet("event/{eventId}/roster")]
+    [Authorize(Policy = Permissions.AttendanceView)]
     public ActionResult<ApiResponse<List<AttendanceRosterItem>>> GetRoster(int eventId)
     {
         var response = _service.GetRoster(eventId);
@@ -34,6 +38,7 @@ public class AttendanceController : ControllerBase
     // POST: api/Attendance/mark
     // Body: { eventId: 1, personId: 5, type: 1 }
     [HttpPost("mark")]
+    [Authorize(Policy = Permissions.AttendanceTake)]
     public ActionResult<ApiResponse<Assistance>> Mark([FromBody] AttendanceRequest request)
     {
         var response = _service.MarkAttendance(request.EventId, request.PersonId, request.Type);
@@ -44,6 +49,7 @@ public class AttendanceController : ControllerBase
     // POST: api/Attendance/external/5
     // Body: Person object
     [HttpPost("external/{eventId}")]
+    [Authorize(Policy = Permissions.AttendanceAddPerson)]
     public ActionResult<ApiResponse<Assistance>> RegisterExternal(int eventId, [FromBody] Person person)
     {
         // Asumimos 'Present' por defecto para externos
@@ -54,6 +60,7 @@ public class AttendanceController : ControllerBase
 
     // DELETE: api/Attendance/event/5/person/10
     [HttpDelete("event/{eventId}/person/{personId}")]
+    [Authorize(Policy = Permissions.AttendanceEdit)]
     public ActionResult<ApiResponse<bool>> Remove(int eventId, int personId)
     {
         var response = _service.RemoveAttendance(eventId, personId);

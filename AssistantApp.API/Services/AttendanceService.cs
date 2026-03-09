@@ -139,6 +139,8 @@ public class AttendanceService
     {
         var evt = _context.Events.Find(eventId);
         if (evt == null) return ApiResponse<Assistance>.Fail("Evento no encontrado");
+        if (evt.State != EventState.InProgress)
+            return ApiResponse<Assistance>.Fail("Solo se puede registrar externos en eventos en curso.");
 
         if (!evt.AllowExternal)
             return ApiResponse<Assistance>.Fail("Este evento no permite registrar externos.");

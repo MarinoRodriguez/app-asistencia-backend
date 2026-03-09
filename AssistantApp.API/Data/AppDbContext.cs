@@ -1,9 +1,12 @@
+using AssistantApp.API.Identity;
 using AssistantApp.Shared;
 using AssistantApp.Shared.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace AssistantApp.API.Data;
-public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
+public class AppDbContext(DbContextOptions<AppDbContext> options)
+    : IdentityDbContext<ApplicationUser>(options)
 {
     // Tables
     public DbSet<Person> People { get; set; }

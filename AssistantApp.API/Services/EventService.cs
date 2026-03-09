@@ -48,6 +48,8 @@ public class EventService
     {
         var existing = _context.Events.Find(id);
         if (existing == null) return ApiResponse<Event>.Fail("Evento no encontrado");
+        if (existing.State == EventState.Finished)
+            return ApiResponse<Event>.Fail("El evento está finalizado y no permite cambios.");
 
         existing.Title = evt.Title;
         existing.Description = evt.Description;
@@ -64,6 +66,10 @@ public class EventService
     {
         var evt = _context.Events.Find(id);
         if (evt == null) return ApiResponse<bool>.Fail("Evento no encontrado");
+        if (evt.State == EventState.Finished)
+            return ApiResponse<bool>.Fail("El evento está finalizado.");
+        if (evt.State == EventState.InProgress)
+            return ApiResponse<bool>.Fail("El evento ya está en curso.");
 
         evt.State = EventState.InProgress;
         _context.SaveChanges();
@@ -74,6 +80,8 @@ public class EventService
     {
         var evt = _context.Events.Find(id);
         if (evt == null) return ApiResponse<bool>.Fail("Evento no encontrado");
+        if (evt.State != EventState.InProgress)
+            return ApiResponse<bool>.Fail("Solo se puede finalizar un evento en curso.");
 
         evt.State = EventState.Finished;
         evt.ActualEndDate = DateTime.Now;
@@ -83,8 +91,11 @@ public class EventService
 
     public ApiResponse<Invitation> InvitePerson(int eventId, int personId)
     {
-        if (!_context.Events.Any(e => e.Id == eventId))
+        var evt = _context.Events.Find(eventId);
+        if (evt == null)
             return ApiResponse<Invitation>.Fail("Evento no existe");
+        if (evt.State == EventState.Finished)
+            return ApiResponse<Invitation>.Fail("El evento está finalizado.");
         
         if (!_context.People.Any(p => p.Id == personId))
             return ApiResponse<Invitation>.Fail("Persona no existe");
@@ -101,8 +112,11 @@ public class EventService
 
     public ApiResponse<int> InviteGroup(int eventId, int groupId)
     {
-        if (!_context.Events.Any(e => e.Id == eventId))
+        var evt = _context.Events.Find(eventId);
+        if (evt == null)
             return ApiResponse<int>.Fail("Evento no existe");
+        if (evt.State == EventState.Finished)
+            return ApiResponse<int>.Fail("El evento está finalizado.");
 
         var members = _context.PersonGroups
             .Where(pg => pg.GroupId == groupId)
@@ -129,6 +143,11 @@ public class EventService
 
     public ApiResponse<bool> RemoveInvitation(int eventId, int personId)
     {
+        var evt = _context.Events.Find(eventId);
+        if (evt == null) return ApiResponse<bool>.Fail("Evento no existe");
+        if (evt.State == EventState.Finished)
+            return ApiResponse<bool>.Fail("El evento está finalizado.");
+
         var inv = _context.Invitations
             .FirstOrDefault(i => i.EventId == eventId && i.PersonId == personId);
         
@@ -137,5 +156,28 @@ public class EventService
         _context.Invitations.Remove(inv);
         _context.SaveChanges();
         return ApiResponse<bool>.Ok(true, "Invitación eliminada");
+    }
+
+    public ApiResponse<bool> Delete(int id)
+    {
+        var evt = _context.Events.Find(id);
+        if (evt == null) return ApiResponse<bool>.Fail("Evento no encontrado");
+
+        var invitations = _context.Invitations.Where(i => i.EventId == id).ToList();
+        var assistances = _context.Assistances.Where(a => a.EventId == id).ToList();
+
+        if (invitations.Any())
+        {
+            _context.Invitations.RemoveRange(invitations);
+        }
+
+        if (assistances.Any())
+        {
+            _context.Assistances.RemoveRange(assistances);
+        }
+
+        _context.Events.Remove(evt);
+        _context.SaveChanges();
+        return ApiResponse<bool>.Ok(true, "Evento eliminado");
     }
 }

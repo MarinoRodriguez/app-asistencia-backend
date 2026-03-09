@@ -1,7 +1,7 @@
 DOCKERHUB_USER ?= marinorodriguez
-IMAGE_NAME ?= app-asistencia-frontend
+IMAGE_NAME ?= app-asistencia-backend
 IMAGE := $(DOCKERHUB_USER)/$(IMAGE_NAME)
-VERSION ?= 1.1.1
+VERSION ?= 1.0.0
 PLATFORMS ?= linux/amd64,linux/arm64
 
 .PHONY: buildx
@@ -10,11 +10,11 @@ buildx:
 
 .PHONY: build
 build: buildx
-	docker buildx build --platform $(PLATFORMS) -t $(IMAGE):$(VERSION) -f Dockerfile .
+	docker buildx build --platform $(PLATFORMS) -t $(IMAGE):$(VERSION) -f Dockerfile ..
 
 .PHONY: push
 push: buildx
-	docker buildx build --platform $(PLATFORMS) -t $(IMAGE):$(VERSION) -f Dockerfile . --push
+	docker buildx build --platform $(PLATFORMS) -t $(IMAGE):$(VERSION) -f Dockerfile .. --push
 
 .PHONY: release
 release: push

@@ -13,6 +13,8 @@ export default function AdminEvents() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -50,6 +52,39 @@ export default function AdminEvents() {
       navigate(`/staff/attendance/event/${evtId}`);
     } catch (err) {
       setError(err.message || "No se pudo iniciar el evento");
+    }
+  };
+
+  const handleFinish = async (evtId) => {
+    try {
+      await eventApi.finish(evtId);
+      setEvents((prev) =>
+        prev.map((evt) => (evt.id === evtId ? { ...evt, state: EVENT_STATE.Finished } : evt))
+      );
+    } catch (err) {
+      setError(err.message || "No se pudo finalizar el evento");
+    }
+  };
+
+  const confirmDelete = (eventItem) => {
+    setDeleteTarget(eventItem);
+  };
+
+  const cancelDelete = () => {
+    setDeleteTarget(null);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      setDeleting(true);
+      await eventApi.remove(deleteTarget.id);
+      setEvents((prev) => prev.filter((evt) => evt.id !== deleteTarget.id));
+      setDeleteTarget(null);
+    } catch (err) {
+      setError(err.message || "No se pudo eliminar el evento");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -140,8 +175,12 @@ export default function AdminEvents() {
                   >
                     {EVENT_STATE_LABEL[evt.state] || ""}
                   </span>
-                  <button className="text-slate-300 hover:text-slate-500">
-                    <span className="material-symbols-outlined">more_vert</span>
+                  <button
+                    className="text-slate-300 hover:text-rose-500"
+                    onClick={() => confirmDelete(evt)}
+                    title="Eliminar evento"
+                  >
+                    <span className="material-symbols-outlined">delete</span>
                   </button>
                 </div>
                 <h3 className="text-slate-900 font-bold text-lg leading-tight mb-2 group-hover:text-primary transition-colors">
@@ -172,21 +211,29 @@ export default function AdminEvents() {
                     className="flex-1 px-3 py-2 text-xs font-semibold bg-slate-900 text-white rounded-lg"
                     onClick={() => navigate(`/admin/events/${evt.id}/config`)}
                   >
-                    Configurar
+                    {evt.state === EVENT_STATE.Finished ? "Ver" : "Configurar"}
                   </button>
                   {evt.state === EVENT_STATE.InProgress ? (
-                    <button
-                      className="flex-1 px-3 py-2 text-xs font-semibold bg-primary text-white rounded-lg"
-                      onClick={() => navigate(`/staff/attendance/event/${evt.id}`)}
-                    >
-                      Tomar asistencia
-                    </button>
+                    <>
+                      <button
+                        className="flex-1 px-3 py-2 text-xs font-semibold bg-primary text-white rounded-lg"
+                        onClick={() => navigate(`/staff/attendance/event/${evt.id}`)}
+                      >
+                        Tomar asistencia
+                      </button>
+                      <button
+                        className="flex-1 px-3 py-2 text-xs font-semibold bg-rose-50 text-rose-600 rounded-lg border border-rose-200"
+                        onClick={() => handleFinish(evt.id)}
+                      >
+                        Finalizar
+                      </button>
+                    </>
                   ) : evt.state === EVENT_STATE.Finished ? (
                     <button
-                      className="flex-1 px-3 py-2 text-xs font-semibold bg-slate-200 text-slate-400 rounded-lg cursor-not-allowed"
-                      disabled
+                      className="flex-1 px-3 py-2 text-xs font-semibold bg-slate-900 text-white rounded-lg"
+                      onClick={() => navigate(`/staff/attendance/event/${evt.id}`)}
                     >
-                      Evento finalizado
+                      Ver asistencia
                     </button>
                   ) : (
                     <button
@@ -202,6 +249,39 @@ export default function AdminEvents() {
           </div>
         )}
       </div>
+
+      {deleteTarget ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={cancelDelete} />
+          <div className="relative w-full max-w-md mx-4 rounded-2xl bg-white shadow-2xl border border-slate-200 p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-rose-500">Eliminar</p>
+                <h3 className="text-lg font-black text-slate-900 mt-2">Eliminar evento</h3>
+              </div>
+              <button className="text-slate-400 hover:text-slate-600" onClick={cancelDelete}>
+                ✕
+              </button>
+            </div>
+            <p className="text-sm text-slate-600 mt-3">
+              Vas a eliminar <span className="font-semibold text-slate-900">{deleteTarget.title}</span> y toda su asistencia.
+              Esta acción no se puede deshacer.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button className="px-4 py-2 text-sm font-semibold border border-slate-200 rounded-lg" onClick={cancelDelete}>
+                Cancelar
+              </button>
+              <button
+                className="px-4 py-2 text-sm font-semibold text-white bg-rose-600 rounded-lg disabled:opacity-60"
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {deleting ? "Eliminando..." : "Eliminar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </AdminLayout>
   );
 }

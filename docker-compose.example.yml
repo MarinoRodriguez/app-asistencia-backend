@@ -1,0 +1,31 @@
+version: "3.9"
+
+services:
+  api:
+    image: repo/app-asistencia-api:1.0.0
+    container_name: app-asistencia-api
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      DISABLE_HTTPS_REDIRECT: "true"
+      ConnectionStrings__Default: "Data Source=/data/asistencia.db"
+      Jwt__Key: "CHANGE_ME_SUPER_SECRET"
+      Jwt__Issuer: "AssistantApp"
+      Jwt__Audience: "AssistantApp"
+      Jwt__ExpiresMinutes: "480"
+    ports:
+      - "8080:8080"
+    volumes:
+      - api_data:/data
+
+  web:
+    image: repo/app-asistencia-frontend:1.0.0
+    container_name: app-asistencia-web
+    environment:
+      VITE_API_URL: "http://localhost:8080"
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+
+volumes:
+  api_data:
